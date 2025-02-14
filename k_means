@@ -1,0 +1,32 @@
+C:\Users\PATHANI BHAVANA\Downloads
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+file_path = "C:\Users\PATHANI BHAVANA\Downloads"
+df = pd.read_csv('C:\Users\PATHANI BHAVANA\Downloads')
+features = ['Annual Income (k$)', 'Spending Score (1-100)']
+data = df[features]
+scaler = StandardScaler()
+data_scaled = scaler.fit_transform(data)
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)
+    kmeans.fit(data_scaled)
+    wcss.append(kmeans.inertia_)
+plt.figure(figsize=(8, 5))
+plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
+plt.xlabel('Number of Clusters')
+plt.ylabel('WCSS')
+plt.title('Elbow Method to Determine Optimal K')
+plt.show()
+kmeans = KMeans(n_clusters=3, init='k-means++', random_state=42)
+df['Cluster'] = kmeans.fit_predict(data_scaled)
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=df[features[0]], y=df[features[1]], hue=df['Cluster'], palette='viridis', s=100)
+plt.xlabel(features[0])
+plt.ylabel(features[1])
+plt.title('Customer Segmentation using K-Means')
+plt.show()
