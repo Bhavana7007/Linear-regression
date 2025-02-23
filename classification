@@ -1,0 +1,46 @@
+import os
+import numpy as np
+import pandas as pd
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.preprocessing import StandardScaler
+from keras.preprocessing import image
+from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import img_to_array
+
+train_dir = 'train'
+img_width, img_height = 64, 64
+
+def load_images_from_folder(folder, label):
+    images = []
+    labels = []
+    for filename in os.listdir(folder):
+        img_path = os.path.join(folder, filename)
+        img = image.load_img(img_path, target_size=(img_width, img_height))
+        img_array = img_to_array(img)
+        images.append(img_array)
+        labels.append(label)
+    return images, labels
+
+cat_images, cat_labels = load_images_from_folder(os.path.join(train_dir, 'cats'), 0)
+dog_images, dog_labels = load_images_from_folder(os.path.join(train_dir, 'dogs'), 1)
+
+images = np.array(cat_images + dog_images)
+labels = np.array(cat_labels + dog_labels)
+
+images = images / 255.0
+images = images.reshape(images.shape[0], -1)
+
+X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+svm = SVC(kernel='linear', C=1)
+svm.fit(X_train, y_train)
+
+y_pred = svm.predict(X_test)
+
+print(classification_report(y_test, y_pred))
