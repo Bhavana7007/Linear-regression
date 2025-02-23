@@ -1,0 +1,56 @@
+import os
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report
+import pandas as pd
+
+dataset_path = 'food-101/images'
+img_width, img_height = 224, 224
+categories = os.listdir(dataset_path)
+
+def load_images_and_labels(dataset_path, categories):
+    data = []
+    labels = []
+    for category in categories:
+        category_path = os.path.join(dataset_path, category)
+        for img_name in os.listdir(category_path):
+            img_path = os.path.join(category_path, img_name)
+            img = tf.keras.preprocessing.image.load_img(img_path, target_size=(img_width, img_height))
+            img_array = tf.keras.preprocessing.image.img_to_array(img)
+            data.append(img_array)
+            labels.append(category)
+    return np.array(data), np.array(labels)
+
+data, labels = load_images_and_labels(dataset_path, categories)
+
+data = data.astype('float32') / 255.0
+
+encoder = LabelEncoder()
+labels = encoder.fit_transform(labels)
+
+X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, random_state=42)
+
+model = Sequential()
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(img_width, img_height, 3)))
+model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(len(categories), activation='softmax'))
+
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+
+y_pred = model.predict(X_test)
+y_pred = np.argmax(y_pred, axis=1)
+
+print(classification_report(y_test, y_pred))
+```
